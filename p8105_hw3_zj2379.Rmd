@@ -60,5 +60,81 @@ instacart |>
   knitr::kable(digits = 2)
 ```
 
+## Problem 2
+
+```{r}
+library(p8105.datasets)
+data("brfss_smart2010")
+brfss_smart2010
+```
+
+```{r}
+brfss_smart = 
+  brfss_smart2010 |> 
+  as_tibble()
+brfss_smart = 
+  brfss_smart |>
+  janitor::clean_names() |>
+  rename(state = locationabbr, location_state = locationdesc) |>
+  filter(topic %in% "Overall Health") |>
+  mutate(response = fct_relevel(response, "Poor","Excellent")) |>view()
+```
+
+```{r}
+brfss_smart |>
+  group_by(year,state) |>
+  filter(year == "2002") |>
+  count(state) |>
+  filter(n >= 7)|>
+  pivot_wider(
+    names_from = state, 
+    values_from = n)|>
+  knitr::kable()
+```
+
+In 2002, AZ, CO, CT, DE, FL, GA ,HI, ID, IL, IN, KS, LA, MA, MD, ME, MI, MN, MO, NC, NE, NH, NJ, NV, NY, OH, OK, OR, PA, RI, SC, SD, TN, TX, UT, VT, WA were observed at 7 or more locations.
+
+```{r}
+brfss_smart |>
+  group_by(year,state) |>
+  filter(year == "2010") |>
+  count(state) |>
+  filter(n >= 7)|>
+  pivot_wider(
+    names_from = state, 
+    values_from = n)|>
+  knitr::kable()
+```
+
+In 2010, AL, AR, AZ, CA, CO, CT, DE, FL, GA, HI, IA, ID, IL, IN, KS, LA, MA, MD, ME, MI, MN, MO, MS, MT, NC, ND, NE, NH, NJ, NM, NV, NY, OH, OK, OR, PA, RI, SC, SD, TN, TX, UT, VT, WA, WY were observed at 7 or more locations.
+
+```{r}
+brfss_smart |>
+  filter(response=="Excellent")|>
+  select(year, state, data_value)|>
+  group_by(year, state)|>
+  summarise(average_data_value = mean(data_value))|>
+  ggplot(aes(x = year, y = average_data_value, color = state, group = state)) +
+  geom_line()+
+  labs(
+    x = "Year",
+    y = "Average Data Value",
+    title = "Average Value Over Time Within a State"
+  )
+  
+```
+
+
+Make a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State.
+```{r}
+brfss_smart |>
+  group_by(year,response,state,data_value) |>
+  filter(year %in% c("2006","2010")) |>
+  filter(state %in% "NY")|>
+  ggplot(aes(x = response, y = data_value)) + 
+  geom_boxplot() + 
+  facet_grid(. ~ year)
+```
+
 
 
