@@ -10,6 +10,8 @@ output: github_document
 library(p8105.datasets)
 data("instacart")
 library(tidyverse)
+library(ggridges)
+library(patchwork)
 ```
 
 ```{r}
@@ -77,36 +79,29 @@ brfss_smart =
   janitor::clean_names() |>
   rename(state = locationabbr, location_state = locationdesc) |>
   filter(topic %in% "Overall Health") |>
-  mutate(response = fct_relevel(response, "Poor","Excellent")) |>view()
+  mutate(response = fct_relevel(response, "Poor","Excellent"))
+
 ```
 
 ```{r}
 brfss_smart |>
-  group_by(year,state) |>
   filter(year == "2002") |>
-  count(state) |>
-  filter(n >= 7)|>
-  pivot_wider(
-    names_from = state, 
-    values_from = n)|>
-  knitr::kable()
+  group_by(state) |>                                                    
+  summarize(n = n_distinct(location_state)) |>  
+  filter(n >= 7)
 ```
 
-In 2002, AZ, CO, CT, DE, FL, GA ,HI, ID, IL, IN, KS, LA, MA, MD, ME, MI, MN, MO, NC, NE, NH, NJ, NV, NY, OH, OK, OR, PA, RI, SC, SD, TN, TX, UT, VT, WA were observed at 7 or more locations.
+In 2002, CT, FL, MA, NC, Nj, PA were observed at 7 or more locations.
 
 ```{r}
 brfss_smart |>
-  group_by(year,state) |>
   filter(year == "2010") |>
-  count(state) |>
-  filter(n >= 7)|>
-  pivot_wider(
-    names_from = state, 
-    values_from = n)|>
-  knitr::kable()
+  group_by(state) |>                                                    
+  summarize(n = n_distinct(location_state)) |>  
+  filter(n >= 7)
 ```
 
-In 2010, AL, AR, AZ, CA, CO, CT, DE, FL, GA, HI, IA, ID, IL, IN, KS, LA, MA, MD, ME, MI, MN, MO, MS, MT, NC, ND, NE, NH, NJ, NM, NV, NY, OH, OK, OR, PA, RI, SC, SD, TN, TX, UT, VT, WA, WY were observed at 7 or more locations.
+In 2010, CA, CO, FL, MA, MD, NC, NE, NJ, HY, OH, PA, SC, TX, WA were observed at 7 or more locations.
 
 ```{r}
 brfss_smart |>
@@ -125,7 +120,6 @@ brfss_smart |>
 ```
 
 
-Make a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State.
 ```{r}
 brfss_smart |>
   group_by(year,response,state,data_value) |>
@@ -139,5 +133,92 @@ brfss_smart |>
 
 ## Problem3
 
+```{r}
+nhanes_covar = 
+  read_csv("nhanes_covar.csv",skip = 4) |>
+  janitor::clean_names() |>
+  filter(age > 21) |>
+  mutate(
+    sex = recode(sex, "1" = "male", "2" = "female"),
+      education = recode(
+      education, 
+      "1" = "Less than high shcool", 
+      "2" = "High school equivalent",
+      "3" = "More than high school"),
+  )|>
+ mutate(
+   sex = as.factor(sex), 
+   education = as.factor(education)
+ )|>
+  na.omit() 
+nhanes_covar
+```
+```{r}
+nhanes_accel = 
+  read_csv("nhanes_accel.csv") |>
+  janitor::clean_names()|>
+   pivot_longer(                                           
+    min1:min1440,
+    names_to = "number",
+    values_to = "counts",
+    names_prefix = "min"
+  )
+nhanes_accel
+```
+
+```{r}
+nhanes_df = left_join(nhanes_covar,nhanes_accel,by = "seqn")
+```
 
 
+```{r}
+education_table=select(nhanes_covar, sex | education)  
+table(education_table)
+```
+
+
+At the High school equivalent education level, the number of male is 34 and the number of female is 23, more male than female. At less than high school education level,the number of male is 28 and the number of female is 27, more male than female. At more than high school education level,the number of male is 59 and the number of female is 54, more male than female.
+
+```{r}
+nhanes_covar |>
+ggplot(aes(x = age, fill = sex )) +
+  geom_density(alpha = .5) +
+  facet_grid(. ~ education)
+```
+
+Based on the graphs, at the high school equivalent education level, the number of females exceeds the number of males as age increases. At the less than high school education level, the number of females first exceeds the number of males then becomes lower than that of males. At the more than high school education level, the number of females is originally higher than the number of males and then becomes lower than that of males. 
+
+
+```{r}
+accel_clean = 
+  nhanes_df |>                                                                  
+  group_by(seqn, sex, age, education) |>                        
+  summarize(
+    total_activity = sum(counts)                                
+  )
+accel_clean|>
+ggplot(aes(x = age, y = total_activity, color = sex)) +
+  geom_point() +
+  geom_smooth(se = FALSE) +
+  facet_grid(. ~ education)+
+  labs(
+    title = "total activities against age",
+    x = "age",
+    y = "total activities",
+  ) 
+```
+At high school equivalent and more than high school education level, overall females activity is higher than males. At less than high school education level, the overall males activity is higher than females. No matter education level and gender, total activity decreases as the age increases.
+
+```{r}
+nhanes_df |>
+ggplot(aes(x = number, y = counts, group = seqn, color = sex)) +
+  geom_line(alpha = .2) +
+  facet_grid(. ~ education) +
+  geom_smooth(aes(group = sex), se = FALSE)+
+  labs(
+    title = "total activities over 24-hour",
+    x = "time(mins)",
+    y = "total activities",
+  ) 
+```
+Based on the plot, the 24-hour activity time courses for high school equivalent and less than high school education levels are similar. At more than high school education level, there are two peaks of activities. In addition, females have higher activities than males do.
