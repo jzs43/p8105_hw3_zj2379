@@ -83,7 +83,7 @@ brfss_smart =
   janitor::clean_names() |>
   rename(state = locationabbr, location_state = locationdesc) |>
   filter(topic %in% "Overall Health") |>
-  mutate(response = fct_relevel(response, "Poor","Excellent"))
+  mutate(response = fct_relevel(response, "Poor","Fair","Good","Very good","Excellent"))
 
 ```
 
