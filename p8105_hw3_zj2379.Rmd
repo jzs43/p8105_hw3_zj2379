@@ -97,7 +97,7 @@ brfss_smart |>
   summarize(n = n_distinct(location_state)) |>  
   filter(n >= 7)
 ```
-
+This plot shows a line for each state across years from 2002 to 2010.
 In 2002, CT, FL, MA, NC, Nj, PA were observed at 7 or more locations.
 
 ```{r}
@@ -141,7 +141,7 @@ brfss_smart |>
   facet_grid(. ~ year)
   ggsave("two-panel plot for 2006 and 2010.pdf")
 ```
-This plot shows the distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State in 2006 and 2010 respectively. Based on the visulizaiton, the group with "poor" responses has the lowest data values at both years, good and very good responses have relativelty high data values.
+This plot shows the distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY State in 2006 and 2010 respectively. Based on the graphs, the group with "poor" responses has the lowest data values at both years, good and very good responses have relatively high data values.
 
 
 ## Problem3
